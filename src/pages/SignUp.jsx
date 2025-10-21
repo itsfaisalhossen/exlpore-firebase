@@ -2,18 +2,29 @@ import { Link } from "react-router";
 import { FaEye } from "react-icons/fa";
 import { IoEyeOff } from "react-icons/io5";
 import MyContainer from "../components/MyContainer";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  updateProfile,
+} from "firebase/auth";
 import { auth } from "../firebase/firebase.config";
 import { toast } from "react-toastify";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { AuthContext } from "../context/AuthContext";
 
 const SignUp = () => {
   const [show, setShow] = useState(false);
+
+  const result = useContext(AuthContext);
+  const { user } = result;
+  console.log(user);
 
   const handleSignup = (e) => {
     e.preventDefault();
     const email = e.target.email?.value;
     const password = e.target.password?.value;
+    const displayName = e.target.name?.value;
+    const photoURL = e.target.photoURL?.value;
     // console.log("signup function entered", { email, password });
 
     const regEx =
@@ -26,14 +37,35 @@ const SignUp = () => {
       return;
     }
 
+    // 1st step create user
     createUserWithEmailAndPassword(auth, email, password)
-      // eslint-disable-next-line no-unused-vars
       .then((res) => {
+        // 2st step  update profile
+        updateProfile(res.user, {
+          displayName,
+          photoURL,
+        })
+          .then(() => {
+            // 3st email varification
+            sendEmailVerification(res.user)
+              .then(() => {
+                console.log(res);
+                toast.success(
+                  "SignUp Successful. Check your email to active your account"
+                );
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          })
+          .catch((err) => {
+            toast.error(err.message);
+            console.log(e);
+          });
         // console.log(res.user);
-        toast.success("SignUp Successful");
       })
       .catch((err) => {
-        // console.log(err);
+        console.log(err);
         toast.error(err.message);
         // console.log(err.code);
         // if (err.code === "auth/email-already-in-use") {
@@ -77,6 +109,28 @@ const SignUp = () => {
             </h2>
 
             <form onSubmit={handleSignup} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  placeholder="Enter Your Name"
+                  className="input input-bordered w-full bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  PhotoURL
+                </label>
+                <input
+                  type="text"
+                  name="photoURL"
+                  required
+                  placeholder="Enter Your photoURL"
+                  className="input input-bordered w-full bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Email</label>
                 <input

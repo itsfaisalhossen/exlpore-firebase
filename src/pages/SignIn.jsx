@@ -4,7 +4,9 @@ import { FaEye } from "react-icons/fa";
 import { useState } from "react";
 import { IoEyeOff } from "react-icons/io5";
 import {
+  GithubAuthProvider,
   GoogleAuthProvider,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
@@ -12,10 +14,13 @@ import {
 import { auth } from "../firebase/firebase.config";
 import { toast } from "react-toastify";
 
-const provider = new GoogleAuthProvider();
+const googleProvider = new GoogleAuthProvider();
+const githubProvider = new GithubAuthProvider();
 const SignIn = () => {
   const [user, setUser] = useState(null);
   const [show, setShow] = useState(false);
+
+  const [email, setEmail] = useState(null);
 
   const handleSignin = (e) => {
     e.preventDefault();
@@ -25,39 +30,68 @@ const SignIn = () => {
 
     signInWithEmailAndPassword(auth, email, password)
       .then((res) => {
-        // console.log(res.user);
+        console.log(res);
+        if (!res?.user?.emailVerified) {
+          toast.error("Your email is not Verified.");
+          return;
+        }
+        console.log(res.user);
         setUser(res.user);
         toast.success("SignIn Successful");
       })
       .catch((err) => {
-        // console.log(err);
+        console.log(err);
+        toast.error(err.message);
+      });
+  };
+
+  const handleforgetPassword = () => {
+    sendPasswordResetEmail(auth, email)
+      .then((res) => {
+        console.log(res);
+        toast.success("Check your email to reset Password");
+      })
+      .catch((err) => {
+        console.log(err);
         toast.error(err.message);
       });
   };
 
   const handleGoogleSignin = () => {
-    signInWithPopup(auth, provider)
+    signInWithPopup(auth, googleProvider)
       .then((res) => {
-        // console.log(res.user);
+        console.log(res.user);
         setUser(res?.user);
         toast.success("SignIn Successful");
       })
       .catch((err) => {
-        // console.log(err);
+        console.log(err);
+        toast.error(err.message);
+      });
+  };
+
+  const handleGithubSignin = () => {
+    signInWithPopup(auth, githubProvider)
+      .then((res) => {
+        console.log(res.user);
+        setUser(res?.user);
+        toast.success("SignIn Successful");
+      })
+      .catch((err) => {
+        console.log(err);
         toast.error(err.message);
       });
   };
 
   const handleSignout = () => {
     signOut(auth)
-      // eslint-disable-next-line no-unused-vars
       .then((res) => {
-        // console.log(res);
+        console.log(res);
         toast.success("Signout Successful");
         setUser(null);
       })
       .catch((err) => {
-        // console.log(err);
+        console.log(err);
         toast.error(err.message);
       });
   };
@@ -113,6 +147,8 @@ const SignIn = () => {
                   <input
                     type="email"
                     name="email"
+                    // value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                     placeholder="example@email.com"
                     className="input input-bordered w-full bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -136,17 +172,23 @@ const SignIn = () => {
                   </span>
                 </div>
 
+                <button
+                  className="cursor-pointer hover:border-b"
+                  type="button"
+                  onClick={handleforgetPassword}
+                >
+                  Forget Password ?
+                </button>
+
                 <button type="submit" className="my-btn">
                   Login
                 </button>
-
                 {/* Divider */}
                 <div className="flex items-center justify-center gap-2 my-2">
                   <div className="h-px w-16 bg-white/30"></div>
                   <span className="text-sm text-white/70">or</span>
                   <div className="h-px w-16 bg-white/30"></div>
                 </div>
-
                 {/* Google Signin */}
                 <button
                   type="button"
@@ -160,7 +202,19 @@ const SignIn = () => {
                   />
                   Continue with Google
                 </button>
-
+                {/* github Signin */}
+                <button
+                  type="button"
+                  onClick={handleGithubSignin}
+                  className="flex items-center justify-center gap-3 bg-white text-gray-800 px-5 py-2 rounded-lg w-full font-semibold hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  <img
+                    className="w-5 h-5"
+                    src="https://img.icons8.com/3d-fluency/94/github.png"
+                    alt="github"
+                  />
+                  Continue with Github
+                </button>
                 <p className="text-center text-sm text-white/80 mt-3">
                   Don’t have an account?{" "}
                   <Link
